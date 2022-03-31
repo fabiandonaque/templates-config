@@ -8,6 +8,11 @@
 */
 
 class Response {
+	public $ok = 0;
+	public $clientError = 1;
+	public $serverError = 2;
+	public $unAuthorized = 3;
+	
     public function __construct($code,$data){
         $this->code = $code;
         $this->data = $data;
@@ -19,14 +24,14 @@ class FabsPDO {
 	private $salt;
 	public $encryptor;
 
-	public function __construct($dbname,$user,$password,$salt) {
-		$dsn = "mysql:host=localhost;dbname=donaque_".$dbname.";charset=utf8mb4";
+	public function __construct($host,$dbname,$user,$password,$salt) {
+		$dsn = "mysql:host=".$host.";dbname=".$dbname.";charset=utf8mb4";
     	$options = [
               PDO::ATTR_EMULATE_PREPARES   => false, // turn off emulation mode for "real" prepared statements
               PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION, //turn on errors in the form of exceptions
               PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC, //make the default fetch be an associative array
             ];
-        $this->pdo = new PDO($dsn, "donaque_".$user, $password, $options);
+        $this->pdo = new PDO($dsn, $user, $password, $options);
         $this->salt = $salt;
         $this->encryptor  = "AES_ENCRYPT(?,'$salt')";
 	}
@@ -41,11 +46,11 @@ class FabsPDO {
         try{
             $stmt = $this->pdo->prepare($query);
             $stmt->execute($params);
-            return new Response(1,'Ok');
+            return new Response(Response.ok,'Ok');
 
         } catch(Exception $e){
             error_log($e);
-            return new Response(0,'Ha fallado la base de datos');
+            return new Response(Response.serverError,'Database operation failed.');
         }
     }
 
@@ -54,11 +59,11 @@ class FabsPDO {
             $stmt = $this->pdo->prepare($query);
             $stmt->execute($params);
             $id = $this->pdo->lastInsertId();
-            return new Response(1,$id);
+            return new Response(Response.ok,$id);
 
         } catch(Exception $e){
             error_log($e);
-            return new Response(0,'Ha fallado la base de datos');
+            return new Response(Response.serverError,'Database operation failed.');
         }
     }
 
@@ -66,11 +71,11 @@ class FabsPDO {
         try{
             $stmt = $this->pdo->prepare($query);
             $stmt->execute($params);
-            return new Response(1,$stmt->rowCount());
+            return new Response(Response.ok,$stmt->rowCount());
 
         } catch(Exception $e){
             error_log($e);
-            return new Response(0,'Ha fallado la base de datos');
+            return new Response(Response.serverError,'Database operation failed.');
         }
     }
 
@@ -83,11 +88,11 @@ class FabsPDO {
             while($row = $stmt->fetch()) {
                 array_push($result,$row);
             }
-            return new Response(1,$result);
+            return new Response(Response.ok,$result);
 
         } catch(Exception $e){
             error_log($e);
-            return new Response(0, 'Ha fallado la base de datos');
+            return new Response(Response.serverError, 'Database operation failed.');
         }
     }
 
